@@ -23,7 +23,7 @@ config :errjordan, ErrjordanWeb.Endpoint,
   check_origin: false,
   code_reloader: true,
   debug_errors: true,
-  secret_key_base: "FqcfXC7rqcIJq1kPTOKSlsRpVUKQ+nXPs6rGogBsTqXS8tJ8SUv3PfsnUT/k2wTU",
+  secret_key_base: "IYp9bUc4WEbZG/nxVreFMmUqmCN8ELV9ILgRkvAnVO2tjW3hP7XEVsDXo+fd9UsV",
   watchers: [
     esbuild: {Esbuild, :install_and_run, [:errjordan, ~w(--sourcemap=inline --watch)]},
     tailwind: {Tailwind, :install_and_run, [:errjordan, ~w(--watch)]}

@@ -20,7 +20,7 @@ config :errjordan, ErrjordanWeb.Endpoint,
     layout: false
   ],
   pubsub_server: Errjordan.PubSub,
-  live_view: [signing_salt: "Y9SoSiz8"]
+  live_view: [signing_salt: "J7XVs4CV"]
 
 # Configures the mailer
 #

@@ -17,7 +17,7 @@ config :errjordan, Errjordan.Repo,
 # you can enable the server option below.
 config :errjordan, ErrjordanWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],
-  secret_key_base: "Y2dnpOzmU3aAzvtSUSnBuIcGPuq7SNBQkdYXqwztqoCq2lxpo4s7rQrbP69YHWlr",
+  secret_key_base: "YBmTsVcrfeMoekYuBNvyMdGoONXKMX++zwc8KXo2ROALkoI84Y0oA+p+BI3Ndvmx",
   server: false
 
 # In test we don't send emails

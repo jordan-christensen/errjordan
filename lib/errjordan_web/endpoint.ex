@@ -7,7 +7,7 @@ defmodule ErrjordanWeb.Endpoint do
   @session_options [
     store: :cookie,
     key: "_errjordan_key",
-    signing_salt: "+UwuH3Vs",
+    signing_salt: "1dZQJYzZ",
     same_site: "Lax"
   ]
 
