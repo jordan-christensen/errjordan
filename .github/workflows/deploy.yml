@@ -70,7 +70,7 @@ jobs:
             cd ~/deploy/${{ github.event.repository.name }}
             export SECRET_KEY_BASE='${{ secrets.SECRET_KEY_BASE }}'
             export DATABASE_URL='${{ secrets.DATABASE_URL }}'
-
-            ./bin/errjordan stop || true
-            ./bin/errjordan eval "Errjordan.Release.migrate"
-            ./bin/errjordan start
+            
+            ./errjordan/bin/errjordan stop || true
+            ./errjordan/bin/errjordan eval "Errjordan.Release.migrate"
+            ./errjordan/bin/errjordan start
