@@ -42,6 +42,7 @@ jobs:
           PHX_HOST: errjordan.dev
           PORT: 4444
           SECRET_KEY_BASE: ${{ secrets.SECRET_KEY_BASE }}
+          MIX_TARGET: host
 
       - name: Prepare SSH environment
         run: |
