@@ -58,7 +58,7 @@ jobs:
         run: ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
       - name: Deploy with rsync
-        run: rsync -avz --delete --exclude 'rel/' _build/prod/rel/ ${{ secrets.DEVICE_USERNAME }}@${{ secrets.SERVER_IP }}:~/${{ github.event.repository.name }}
+        run: rsync -avz --delete --exclude 'rel/' _build/prod/rel/ ${{ secrets.DEVICE_USERNAME }}@${{ secrets.SERVER_IP }}:~/deploy/${{ github.event.repository.name }}
       
       - name: Run migrations & Restart server
         uses: appleboy/ssh-action@master
@@ -67,10 +67,10 @@ jobs:
           username: ${{ secrets.DEVICE_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd ~/${{ github.event.repository.name }}
+            cd ~/deploy/${{ github.event.repository.name }}
             export SECRET_KEY_BASE='${{ secrets.SECRET_KEY_BASE }}'
             export DATABASE_URL='${{ secrets.DATABASE_URL }}'
-            
-            _build/prod/rel/errjordan/bin/errjordan stop || true
-            _build/prod/rel/errjordan/bin/errjordan eval "Errjordan.Release.migrate"
-            _build/prod/rel/errjordan/bin/errjordan start
+
+            ./bin/errjordan stop || true
+            ./bin/errjordan eval "Errjordan.Release.migrate"
+            ./bin/errjordan start
