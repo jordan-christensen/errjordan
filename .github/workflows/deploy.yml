@@ -59,7 +59,7 @@ jobs:
 
       - name: Deploy with rsync
         run: rsync -avz --delete --exclude 'rel/' _build/prod/rel/ ${{ secrets.DEVICE_USERNAME }}@${{ secrets.SERVER_IP }}:~/${{ github.event.repository.name }}
-            
+      
       - name: Run migrations & Restart server
         uses: appleboy/ssh-action@master
         with:
@@ -67,9 +67,9 @@ jobs:
           username: ${{ secrets.DEVICE_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd ~/errjordan
+            cd ~/${{ github.event.repository.name }}
             export SECRET_KEY_BASE='${{ secrets.SECRET_KEY_BASE }}'
-            export DATABASE_URL='ecto://errjordan_user:your_password_here@localhost/errjordan_prod' # <--- Make sure this has your actual password
+            export DATABASE_URL='${{ secrets.DATABASE_URL }}'
             
             _build/prod/rel/errjordan/bin/errjordan stop || true
             _build/prod/rel/errjordan/bin/errjordan eval "Errjordan.Release.migrate"
