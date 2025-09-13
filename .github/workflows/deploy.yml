@@ -1,0 +1,78 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Elixir and Erlang
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: "1.15"
+          otp-version: "26"
+
+      - name: Install dependencies
+        run: |
+          mix deps.get
+          mix local.rebar --force
+          mix deps.compile
+
+      - name: Build assets
+        run: |
+          npm install --prefix assets
+          npm run deploy --prefix assets
+          mix phx.digest
+
+      - name: Create release
+        run: |
+          mix release --overwrite
+        env:
+          MIX_ENV: prod
+          PHX_HOST: errjordan.dev
+          PORT: 4444
+          SECRET_KEY_BASE: ${{ secrets.SECRET_KEY_BASE }}
+
+      - name: Install SSH key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          known_hosts: "placeholder"
+
+      - name: Add Tailscale IP to known_hosts
+        run: ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+
+      - name: Deploy with rsync
+        run: |
+          # The 'rsync' command will copy your compiled application to the personal Mac
+          rsync -avz --delete --exclude 'rel/' _build/prod/rel/ errjordan@${{ secrets.SERVER_IP }}:~/errjordan
+
+      - name: Run migrations & Restart server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: errjordan
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # Navigate to the application directory on the personal Mac
+            cd ~/errjordan
+
+            # Export environment variables for the running application
+            export SECRET_KEY_BASE='${{ secrets.SECRET_KEY_BASE }}'
+            export DATABASE_URL='ecto://errjordan_user:your_password_here@localhost/errjordan_prod'
+
+            # Stop existing server (if any)
+            _build/prod/rel/errjordan/bin/errjordan stop || true
+
+            # Run migrations
+            _build/prod/rel/errjordan/bin/errjordan eval "Errjordan.Release.migrate"
+
+            # Start new server
+            _build/prod/rel/errjordan/bin/errjordan start
