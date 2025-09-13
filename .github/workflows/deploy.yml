@@ -14,15 +14,15 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Connect to Tailscale
-        uses: tailscale/setup-tailscale@v1
+        uses: tailscale/tailscale-action@v2
         with:
           authkey: ${{ secrets.TAILSCALE_AUTH_KEY }}
 
       - name: Set up Elixir and Erlang
         uses: erlef/setup-beam@v1
         with:
-          elixir-version: '1.15'
-          otp-version: '26'
+          elixir-version: "1.15"
+          otp-version: "26"
 
       - name: Install dependencies
         run: |
@@ -48,19 +48,19 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          
+
       - name: Install SSH key
         uses: shimataro/ssh-key-action@v2
         with:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          known_hosts: 'placeholder'
+          known_hosts: "placeholder"
 
       - name: Add Tailscale IP to known_hosts
         run: ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
       - name: Deploy with rsync
         run: rsync -avz --delete --exclude 'rel/' _build/prod/rel/ ${{ secrets.DEVICE_USERNAME }}@${{ secrets.SERVER_IP }}:~/deploy/${{ github.event.repository.name }}
-      
+
       - name: Run migrations & Restart server
         uses: appleboy/ssh-action@master
         with:
@@ -71,7 +71,7 @@ jobs:
             cd ~/deploy/${{ github.event.repository.name }}
             export SECRET_KEY_BASE='${{ secrets.SECRET_KEY_BASE }}'
             export DATABASE_URL='${{ secrets.DATABASE_URL }}'
-            
+
             ./errjordan/bin/errjordan stop || true
             ./errjordan/bin/errjordan eval "Errjordan.Release.migrate"
             ./errjordan/bin/errjordan start
