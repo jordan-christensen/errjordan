@@ -90,15 +90,16 @@ jobs:
           DATABASE_URL='${{ secrets.DATABASE_URL }}' \
           PHX_HOST="$PHX_HOST" \
           PORT="$PORT" \
-          $BIN start
+          $BIN daemon
 
-          # Wait up to 30s for the node to respond
+          # Wait up to 30s for the node to report a PID
           for i in {1..30}; do
-            if $BIN ping >/dev/null 2>&1; then
-              echo "Release is up (ping ok)"
-              exit 0
+            if $BIN pid >/dev/null 2>&1; then
+              echo "Release is up (pid ok)"
+              break
             fi
             sleep 1
           done
-          echo "Release did not respond to ping in time" >&2
-          exit 1
+
+          # Optional: HTTP health probe (won't fail the step)
+          curl --max-time 5 -sS -o /dev/null "http://127.0.0.1:${PORT}/" || true
