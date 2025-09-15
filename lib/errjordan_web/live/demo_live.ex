@@ -12,7 +12,7 @@ defmodule ErrjordanWeb.DemoLive do
         <h1 class="text-2xl font-semibold">Demo LiveView</h1>
         <p class="text-base-content/70">Now: {@now}</p>
 
-        <div id="hello-hook-target" phx-hook="HelloHook" class="p-4 rounded border border-base-300">
+        <div id="hello-hook-target" phx-hook=".HelloHook" class="p-4 rounded border border-base-300">
           This box has phx-hook="HelloHook". Open the JS console to see it mount.
         </div>
       </div>
@@ -20,4 +20,3 @@ defmodule ErrjordanWeb.DemoLive do
     """
   end
 end
-
