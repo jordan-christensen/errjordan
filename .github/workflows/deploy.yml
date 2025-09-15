@@ -10,68 +10,57 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    - name: Checkout
+      uses: actions/checkout@v4
 
-      - name: Connect to Tailscale
-        uses: tailscale/tailscale-action@v2
-        with:
-          authkey: ${{ secrets.TAILSCALE_AUTH_KEY }}
+    - name: Ensure install dirs
+      run: |
+        mkdir -p "$APP_HOME/releases" "$APP_HOME/log"
 
-      - name: Set up Elixir and Erlang
-        uses: erlef/setup-beam@v1
-        with:
-          elixir-version: "1.15"
-          otp-version: "26"
+    - name: Set up Erlang/Elixir
+      uses: erlef/setup-beam@v1
+      with:
+        elixir-version: "1.15"
+        otp-version: "26"
 
-      - name: Install dependencies
-        run: |
-          mix deps.get
-          mix local.rebar --force
-          mix deps.compile
+    - name: Cache deps and build
+      uses: actions/cache@v3
+      with:
+        path: |
+          deps
+          _build
+        key: mix-${{ runner.os }}-${{ hashFiles('**/mix.lock') }}
+        restore-keys: |
+          mix-${{ runner.os }}-
 
-      - name: Build assets
-        run: |
-          mix phx.digest
+    - name: Prepare Mix
+      run: |
+        mix local.hex --force
+        mix local.rebar --force
 
-      - name: Create release
-        run: |
-          mix release --overwrite
-        env:
-          MIX_ENV: prod
-          PHX_HOST: errjordan.dev
-          PORT: 4444
-          SECRET_KEY_BASE: ${{ secrets.SECRET_KEY_BASE }}
-          MIX_TARGET: host
+    - name: Install deps
+      run: mix deps.get
 
-      - name: Prepare SSH environment
-        run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
+    - name: Compile
+      run: mix deps.compile
 
-      - name: Install SSH key
-        uses: shimataro/ssh-key-action@v2
-        with:
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          known_hosts: "placeholder"
+    - name: Build assets
+      run: mix assets.deploy
 
-      - name: Add Tailscale IP to known_hosts
-        run: ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+    - name: Create release
+      run: mix release --overwrite
 
-      - name: Deploy with rsync
-        run: rsync -avz --delete --exclude 'rel/' _build/prod/rel/ ${{ secrets.DEVICE_USERNAME }}@${{ secrets.SERVER_IP }}:~/deploy/${{ github.event.repository.name }}
+    - name: Install release to stable path
+      run: |
+        rsync -a --delete "_build/prod/rel/$RELEASE_NAME/" "$INSTALL_DIR/$RELEASE_NAME/"
+        ln -sfn "$INSTALL_DIR/$RELEASE_NAME" "$CURRENT_LINK"
+        echo "BIN=$CURRENT_LINK/bin/$RELEASE_NAME" >> $GITHUB_ENV
 
-      - name: Run migrations & Restart server
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.DEVICE_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd ~/deploy/${{ github.event.repository.name }}
-            export SECRET_KEY_BASE='${{ secrets.SECRET_KEY_BASE }}'
-            export DATABASE_URL='${{ secrets.DATABASE_URL }}'
+    - name: Stop old release
+      run: $BIN stop || true
 
-            ./errjordan/bin/errjordan stop || true
-            ./errjordan/bin/errjordan eval "Errjordan.Release.migrate"
-            ./errjordan/bin/errjordan start
+    - name: Run migrations
+      run: $BIN eval "Errjordan.Release.migrate"
+
+    - name: Start new release
+      run: $BIN start
