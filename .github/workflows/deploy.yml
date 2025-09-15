@@ -82,4 +82,23 @@ jobs:
         run: '$BIN eval "Ecto.Migrator.with_repo(Errjordan.Repo, &Ecto.Migrator.run(&1, :up, all: true))"'
 
       - name: Start new release
-        run: $BIN start
+        shell: bash
+        run: |
+          set -euo pipefail
+          PHX_SERVER=true \
+          SECRET_KEY_BASE='${{ secrets.SECRET_KEY_BASE }}' \
+          DATABASE_URL='${{ secrets.DATABASE_URL }}' \
+          PHX_HOST="$PHX_HOST" \
+          PORT="$PORT" \
+          $BIN start
+
+          # Wait up to 30s for the node to respond
+          for i in {1..30}; do
+            if $BIN ping >/dev/null 2>&1; then
+              echo "Release is up (ping ok)"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Release did not respond to ping in time" >&2
+          exit 1
