@@ -13,6 +13,7 @@ jobs:
   deploy:
     runs-on: [self-hosted, macos, x64]
     env:
+      ImageOS: macos15
       MIX_ENV: prod
       PHX_HOST: errjordan.dev
       PORT: 4444
