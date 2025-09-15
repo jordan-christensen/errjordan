@@ -1,66 +1,84 @@
-name: Deploy to Production
+name: Deploy
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   deploy:
-    runs-on: macos-latest
+    runs-on: [self-hosted, macos, x64]
+    env:
+      MIX_ENV: prod
+      PHX_HOST: errjordan.dev
+      PORT: 4444
+      SECRET_KEY_BASE: ${{ secrets.SECRET_KEY_BASE }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      RELEASE_NAME: errjordan
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Ensure install dirs
-      run: |
-        mkdir -p "$APP_HOME/releases" "$APP_HOME/log"
+      - name: Define install paths and ensure dirs
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "APP_HOME=$HOME/apps/errjordan" >> "$GITHUB_ENV"
+          echo "INSTALL_DIR=$HOME/apps/errjordan/releases/${GITHUB_SHA}/errjordan" >> "$GITHUB_ENV"
+          echo "CURRENT_LINK=$HOME/apps/errjordan/current" >> "$GITHUB_ENV"
+          echo "BIN=$HOME/apps/errjordan/current/bin/errjordan" >> "$GITHUB_ENV"
+          mkdir -p "$HOME/apps/errjordan/releases" "$HOME/apps/errjordan/log"
 
-    - name: Set up Erlang/Elixir
-      uses: erlef/setup-beam@v1
-      with:
-        elixir-version: "1.15"
-        otp-version: "26"
+      - name: Set up Erlang/Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: "1.15"
+          otp-version: "26"
 
-    - name: Cache deps and build
-      uses: actions/cache@v3
-      with:
-        path: |
-          deps
-          _build
-        key: mix-${{ runner.os }}-${{ hashFiles('**/mix.lock') }}
-        restore-keys: |
-          mix-${{ runner.os }}-
+      - name: Cache deps and build
+        uses: actions/cache@v3
+        with:
+          path: |
+            deps
+            _build
+          key: mix-${{ runner.os }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            mix-${{ runner.os }}-
 
-    - name: Prepare Mix
-      run: |
-        mix local.hex --force
-        mix local.rebar --force
+      - name: Prepare Mix
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
 
-    - name: Install deps
-      run: mix deps.get
+      - name: Install dependencies
+        run: mix deps.get
 
-    - name: Compile
-      run: mix deps.compile
+      - name: Compile
+        run: mix deps.compile
 
-    - name: Build assets
-      run: mix assets.deploy
+      - name: Build assets
+        run: mix assets.deploy
 
-    - name: Create release
-      run: mix release --overwrite
+      - name: Create release
+        run: mix release --overwrite
 
-    - name: Install release to stable path
-      run: |
-        rsync -a --delete "_build/prod/rel/$RELEASE_NAME/" "$INSTALL_DIR/$RELEASE_NAME/"
-        ln -sfn "$INSTALL_DIR/$RELEASE_NAME" "$CURRENT_LINK"
-        echo "BIN=$CURRENT_LINK/bin/$RELEASE_NAME" >> $GITHUB_ENV
+      - name: Install release to stable path
+        shell: bash
+        run: |
+          set -euo pipefail
+          rsync -a --delete "_build/prod/rel/$RELEASE_NAME/" "$INSTALL_DIR/"
+          ln -sfn "$INSTALL_DIR" "$CURRENT_LINK"
 
-    - name: Stop old release
-      run: $BIN stop || true
+      - name: Stop old release
+        run: $BIN stop || true
 
-    - name: Run migrations
-      run: $BIN eval "Errjordan.Release.migrate"
+      - name: Run migrations
+        run: $BIN eval "Errjordan.Release.migrate"
 
-    - name: Start new release
-      run: $BIN start
+      - name: Start new release
+        run: $BIN start
