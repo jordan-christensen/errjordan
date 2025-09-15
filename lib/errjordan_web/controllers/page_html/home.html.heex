@@ -198,5 +198,18 @@
         </div>
       </div>
     </div>
+
+    <div class="mt-10">
+      <a href={~p"/demo"} class="btn btn-primary">Open Demo LiveView</a>
+    </div>
   </div>
 </div>
+
+<script :type={Phoenix.LiveView.ColocatedHook} name="HelloHook" phx-no-curly-interpolation>
+  export default {
+    mounted() {
+      console.log("HelloHook mounted")
+    }
+  }
+  // Exported under the "hooks" key in phoenix-colocated/errjordan
+</script>
