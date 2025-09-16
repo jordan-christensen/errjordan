@@ -19,6 +19,7 @@ defmodule ErrjordanWeb.Router do
 
     get "/", PageController, :home
     live "/demo", DemoLive
+    live "/perf", PerfLive
   end
 
   # Other scopes may use custom stacks.
