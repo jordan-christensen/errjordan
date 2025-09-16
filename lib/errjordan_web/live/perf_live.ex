@@ -53,12 +53,16 @@ defmodule ErrjordanWeb.PerfLive do
             class="btn btn-primary"
             phx-click="start"
             disabled={@running?}
-          >Start</button>
+          >
+            Start
+          </button>
           <button
             class="btn"
             phx-click="stop"
             disabled={!@running?}
-          >Stop</button>
+          >
+            Stop
+          </button>
           <div class="text-sm opacity-75">Inflight: {@inflight}</div>
         </div>
 
@@ -132,6 +136,7 @@ defmodule ErrjordanWeb.PerfLive do
 
   def handle_event("set", %{"perf" => params}, socket) do
     opts = normalize_opts(params)
+
     socket =
       socket
       |> assign(:opts, opts)
@@ -141,7 +146,8 @@ defmodule ErrjordanWeb.PerfLive do
     {:noreply, socket}
   end
 
-  def handle_event("start", _params, %{assigns: %{running?: true}} = socket), do: {:noreply, socket}
+  def handle_event("start", _params, %{assigns: %{running?: true}} = socket),
+    do: {:noreply, socket}
 
   def handle_event("start", _params, socket) do
     socket =
@@ -169,7 +175,11 @@ defmodule ErrjordanWeb.PerfLive do
 
     if inflight < max and socket.assigns.running? do
       spawn(fn ->
-        {ms, _} = :timer.tc(fn -> work(socket.assigns.opts.iterations, socket.assigns.opts.payload_size) end)
+        {ms, _} =
+          :timer.tc(fn ->
+            work(socket.assigns.opts.iterations, socket.assigns.opts.payload_size)
+          end)
+
         send(self(), {:work_done, System.monotonic_time(), div(ms, 1000)})
       end)
 
@@ -194,6 +204,7 @@ defmodule ErrjordanWeb.PerfLive do
 
   def handle_info(:tick_stats, socket) do
     ops = socket.assigns.ops_total - socket.assigns.last_ops_total
+
     socket =
       socket
       |> assign(:ops_per_sec, ops * 1.0)
@@ -204,9 +215,10 @@ defmodule ErrjordanWeb.PerfLive do
 
   defp schedule_work_timer(%{assigns: %{opts: %{rate_hz: hz}}} = socket) do
     ms = max(div(1000, max(hz, 1)), 1)
-    ref = Process.send_after(self(), :tick_work, 0)
-    # set up a repeating timer by rescheduling on each tick via Process.send_after in handle_info? Simpler: use :timer.send_interval
+    send(self(), :tick_work)
+    # keep future ticks flowing at the requested rate
     {:ok, tref} = :timer.send_interval(ms, :tick_work)
+
     socket
     |> assign(:work_timer, tref)
   end
@@ -234,7 +246,9 @@ defmodule ErrjordanWeb.PerfLive do
 
   defp cancel_timer(socket, key) do
     case Map.get(socket.assigns, key) do
-      nil -> socket
+      nil ->
+        socket
+
       tref ->
         :timer.cancel(tref)
         assign(socket, key, nil)
@@ -251,8 +265,9 @@ defmodule ErrjordanWeb.PerfLive do
   end
 
   defp int(nil), do: nil
-  defp int("") , do: nil
+  defp int(""), do: nil
   defp int(val) when is_integer(val), do: val
+
   defp int(val) when is_binary(val) do
     case Integer.parse(val) do
       {i, _} -> i
@@ -260,8 +275,8 @@ defmodule ErrjordanWeb.PerfLive do
     end
   end
 
-  defp clamp(v, min, max) when v < min, do: min
-  defp clamp(v, min, max) when v > max, do: max
+  defp clamp(v, min, _max) when v < min, do: min
+  defp clamp(v, _min, max) when v > max, do: max
   defp clamp(v, _min, _max), do: v
 
   defp work(iterations, payload_size) do
@@ -277,4 +292,3 @@ defmodule ErrjordanWeb.PerfLive do
     end
   end
 end
-

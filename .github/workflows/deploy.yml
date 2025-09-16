@@ -37,6 +37,9 @@ jobs:
           echo "CURRENT_LINK=$HOME/apps/errjordan/current" >> "$GITHUB_ENV"
           echo "BIN=$HOME/apps/errjordan/current/bin/errjordan" >> "$GITHUB_ENV"
           echo "NEW_BIN=$HOME/apps/errjordan/releases/${GITHUB_SHA}/errjordan/bin/$RELEASE_NAME" >> "$GITHUB_ENV"
+          echo "LAUNCH_AGENT_LABEL=dev.errjordan.app" >> "$GITHUB_ENV"
+          echo "LAUNCH_AGENT_TARGET=gui/$(id -u)/dev.errjordan.app" >> "$GITHUB_ENV"
+          echo "LAUNCH_AGENT_PLIST=$HOME/Library/LaunchAgents/dev.errjordan.app.plist" >> "$GITHUB_ENV"
           mkdir -p "$HOME/apps/errjordan/releases" "$HOME/apps/errjordan/log"
 
       - name: Set up Erlang/Elixir
@@ -79,10 +82,11 @@ jobs:
           rsync -a --delete "_build/prod/rel/$RELEASE_NAME/" "$INSTALL_DIR/"
           # do not switch symlink yet; verify first
 
-      - name: Stop old release
+      - name: Stop launchd-managed release
         shell: bash
         run: |
           set -euo pipefail
+          launchctl bootout "$LAUNCH_AGENT_TARGET" || true
           if [ -x "$BIN" ]; then
             $BIN stop || true
           fi
@@ -100,42 +104,39 @@ jobs:
           RELEASE_NODE="$RELEASE_NODE" \
           $NEW_BIN eval "Ecto.Migrator.with_repo(Errjordan.Repo, &Ecto.Migrator.run(&1, :up, all: true))"
 
-      - name: Start staged release, verify, then switch
+      - name: Switch current symlink to staged release
         shell: bash
         run: |
           set -euo pipefail
-          PREV_TARGET=$(readlink "$CURRENT_LINK" || true)
+          ln -sfn "$INSTALL_DIR" "$CURRENT_LINK"
 
-          PHX_SERVER=true \
-          SECRET_KEY_BASE='${{ secrets.SECRET_KEY_BASE }}' \
-          DATABASE_URL='${{ secrets.DATABASE_URL }}' \
-          PHX_HOST="$PHX_HOST" \
-          PORT="$PORT" \
-          RELEASE_DISTRIBUTION="$RELEASE_DISTRIBUTION" \
-          RELEASE_NODE="$RELEASE_NODE" \
-          $NEW_BIN daemon
+      - name: Relaunch app via launchd
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f "$LAUNCH_AGENT_PLIST" ]; then
+            echo "LaunchAgent plist not found at $LAUNCH_AGENT_PLIST" >&2
+            exit 1
+          fi
+          launchctl bootstrap gui/$(id -u) "$LAUNCH_AGENT_PLIST"
+          launchctl enable "$LAUNCH_AGENT_TARGET" || true
+          launchctl kickstart -k "$LAUNCH_AGENT_TARGET"
 
-          # Wait up to 30s for the node to report a PID
-          ok=0
+      - name: Verify release is running
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Wait up to 30s for launchd to report a PID
           for i in {1..30}; do
-            if $NEW_BIN pid >/dev/null 2>&1; then
+            if $BIN pid >/dev/null 2>&1; then
               echo "Release is up (pid ok)"
-              ok=1
               break
             fi
             sleep 1
-          done
-          if [ "$ok" != "1" ]; then
-            echo "ERROR: New release failed to report PID" >&2
-            # Attempt rollback
-            if [ -n "$PREV_TARGET" ] && [ -x "$PREV_TARGET/bin/$RELEASE_NAME" ]; then
-              PHX_SERVER=true SECRET_KEY_BASE='${{ secrets.SECRET_KEY_BASE }}' DATABASE_URL='${{ secrets.DATABASE_URL }}' PHX_HOST="$PHX_HOST" PORT="$PORT" RELEASE_DISTRIBUTION="$RELEASE_DISTRIBUTION" RELEASE_NODE="$RELEASE_NODE" "$PREV_TARGET/bin/$RELEASE_NAME" daemon || true
+            if [ "$i" = 30 ]; then
+              echo "ERROR: Release failed to report PID" >&2
+              exit 1
             fi
-            exit 1
-          fi
+          done
 
-          # Quick HTTP probe (IPv6 then IPv4) against /health
           curl -g --max-time 5 -sS -o /dev/null "http://[::1]:${PORT}/health" || curl --max-time 5 -sS -o /dev/null "http://127.0.0.1:${PORT}/health" || true
-
-          # Switch symlink atomically now that the new release is verified
-          ln -sfn "$INSTALL_DIR" "$CURRENT_LINK"

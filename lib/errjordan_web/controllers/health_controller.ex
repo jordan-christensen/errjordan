@@ -5,4 +5,3 @@ defmodule ErrjordanWeb.HealthController do
     json(conn, %{status: "ok"})
   end
 end
-
