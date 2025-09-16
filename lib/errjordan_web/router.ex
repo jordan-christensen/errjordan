@@ -22,6 +22,12 @@ defmodule ErrjordanWeb.Router do
     live "/perf", PerfLive
   end
 
+  scope "/", ErrjordanWeb do
+    pipe_through :api
+
+    get "/health", HealthController, :show
+  end
+
   # Other scopes may use custom stacks.
   # scope "/api", ErrjordanWeb do
   #   pipe_through :api

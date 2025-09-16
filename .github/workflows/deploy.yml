@@ -15,10 +15,13 @@ jobs:
     env:
       ImageOS: macos15
       MIX_ENV: prod
+      PHX_SERVER: true
       PHX_HOST: errjordan.dev
       PORT: 4444
       SECRET_KEY_BASE: ${{ secrets.SECRET_KEY_BASE }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      RELEASE_DISTRIBUTION: name
+      RELEASE_NODE: errjordan@127.0.0.1
       RELEASE_NAME: errjordan
 
     steps:
@@ -33,6 +36,7 @@ jobs:
           echo "INSTALL_DIR=$HOME/apps/errjordan/releases/${GITHUB_SHA}/errjordan" >> "$GITHUB_ENV"
           echo "CURRENT_LINK=$HOME/apps/errjordan/current" >> "$GITHUB_ENV"
           echo "BIN=$HOME/apps/errjordan/current/bin/errjordan" >> "$GITHUB_ENV"
+          echo "NEW_BIN=$HOME/apps/errjordan/releases/${GITHUB_SHA}/errjordan/bin/$RELEASE_NAME" >> "$GITHUB_ENV"
           mkdir -p "$HOME/apps/errjordan/releases" "$HOME/apps/errjordan/log"
 
       - name: Set up Erlang/Elixir
@@ -68,20 +72,22 @@ jobs:
       - name: Create release
         run: mix release --overwrite
 
-      - name: Install release to stable path
+      - name: Stage new release (no symlink switch yet)
         shell: bash
         run: |
           set -euo pipefail
           rsync -a --delete "_build/prod/rel/$RELEASE_NAME/" "$INSTALL_DIR/"
-          ln -sfn "$INSTALL_DIR" "$CURRENT_LINK"
+          # do not switch symlink yet; verify first
 
       - name: Stop old release
-        run: $BIN stop || true
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -x "$BIN" ]; then
+            $BIN stop || true
+          fi
 
-      - name: Run migrations
-        run: '$BIN eval "Ecto.Migrator.with_repo(Errjordan.Repo, &Ecto.Migrator.run(&1, :up, all: true))"'
-
-      - name: Start new release
+      - name: Run migrations on staged release
         shell: bash
         run: |
           set -euo pipefail
@@ -90,16 +96,46 @@ jobs:
           DATABASE_URL='${{ secrets.DATABASE_URL }}' \
           PHX_HOST="$PHX_HOST" \
           PORT="$PORT" \
-          $BIN daemon
+          RELEASE_DISTRIBUTION="$RELEASE_DISTRIBUTION" \
+          RELEASE_NODE="$RELEASE_NODE" \
+          $NEW_BIN eval "Ecto.Migrator.with_repo(Errjordan.Repo, &Ecto.Migrator.run(&1, :up, all: true))"
+
+      - name: Start staged release, verify, then switch
+        shell: bash
+        run: |
+          set -euo pipefail
+          PREV_TARGET=$(readlink "$CURRENT_LINK" || true)
+
+          PHX_SERVER=true \
+          SECRET_KEY_BASE='${{ secrets.SECRET_KEY_BASE }}' \
+          DATABASE_URL='${{ secrets.DATABASE_URL }}' \
+          PHX_HOST="$PHX_HOST" \
+          PORT="$PORT" \
+          RELEASE_DISTRIBUTION="$RELEASE_DISTRIBUTION" \
+          RELEASE_NODE="$RELEASE_NODE" \
+          $NEW_BIN daemon
 
           # Wait up to 30s for the node to report a PID
+          ok=0
           for i in {1..30}; do
-            if $BIN pid >/dev/null 2>&1; then
+            if $NEW_BIN pid >/dev/null 2>&1; then
               echo "Release is up (pid ok)"
+              ok=1
               break
             fi
             sleep 1
           done
+          if [ "$ok" != "1" ]; then
+            echo "ERROR: New release failed to report PID" >&2
+            # Attempt rollback
+            if [ -n "$PREV_TARGET" ] && [ -x "$PREV_TARGET/bin/$RELEASE_NAME" ]; then
+              PHX_SERVER=true SECRET_KEY_BASE='${{ secrets.SECRET_KEY_BASE }}' DATABASE_URL='${{ secrets.DATABASE_URL }}' PHX_HOST="$PHX_HOST" PORT="$PORT" RELEASE_DISTRIBUTION="$RELEASE_DISTRIBUTION" RELEASE_NODE="$RELEASE_NODE" "$PREV_TARGET/bin/$RELEASE_NAME" daemon || true
+            fi
+            exit 1
+          fi
 
-          # Optional: HTTP health probe (won't fail the step)
-          curl --max-time 5 -sS -o /dev/null "http://127.0.0.1:${PORT}/" || true
+          # Quick HTTP probe (IPv6 then IPv4) against /health
+          curl -g --max-time 5 -sS -o /dev/null "http://[::1]:${PORT}/health" || curl --max-time 5 -sS -o /dev/null "http://127.0.0.1:${PORT}/health" || true
+
+          # Switch symlink atomically now that the new release is verified
+          ln -sfn "$INSTALL_DIR" "$CURRENT_LINK"
