@@ -22,7 +22,7 @@ config :errjordan, ErrjordanWeb.Endpoint,
   pubsub_server: Errjordan.PubSub,
   live_view: [signing_salt: "J7XVs4CV"]
 
-# Configures the mailer
+# Mailer configuration
 #
 # By default it uses the "Local" adapter which stores the emails
 # locally. You can see the emails in your browser, at "/dev/mailbox".
