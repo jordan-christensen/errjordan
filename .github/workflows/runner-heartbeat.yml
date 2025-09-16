@@ -1,0 +1,24 @@
+name: Runner Heartbeat
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Daily at 09:00 UTC
+    - cron: '0 9 * * *'
+
+jobs:
+  ping:
+    runs-on: [self-hosted, macos, x64]
+    steps:
+      - name: Print runner info
+        run: |
+          echo "Runner online at: $(date -u)"
+          echo "Host: $(hostname)"
+          sw_vers || true
+          uname -a
+          whoami
+          sysctl -n machdep.cpu.brand_string || true
+      - name: Check GitHub connectivity
+        run: |
+          set -e
+          curl -I https://github.com -sS | head -n1
