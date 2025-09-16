@@ -127,16 +127,25 @@ jobs:
         run: |
           set -euo pipefail
           # Wait up to 30s for launchd to report a PID
+          ok=0
           for i in {1..30}; do
             if $BIN pid >/dev/null 2>&1; then
               echo "Release is up (pid ok)"
+              ok=1
               break
             fi
             sleep 1
-            if [ "$i" = 30 ]; then
-              echo "ERROR: Release failed to report PID" >&2
-              exit 1
-            fi
           done
+
+          if [ "$ok" != "1" ]; then
+            echo "ERROR: Release failed to report PID" >&2
+            echo "---- launchctl status ----"
+            launchctl print "$LAUNCH_AGENT_TARGET" || true
+            echo "---- recent stdout ----"
+            tail -n 200 "$APP_HOME/log/errjordan.out.log" || true
+            echo "---- recent stderr ----"
+            tail -n 200 "$APP_HOME/log/errjordan.err.log" || true
+            exit 1
+          fi
 
           curl -g --max-time 5 -sS -o /dev/null "http://[::1]:${PORT}/health" || curl --max-time 5 -sS -o /dev/null "http://127.0.0.1:${PORT}/health" || true
