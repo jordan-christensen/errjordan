@@ -140,7 +140,27 @@ jobs:
           done
 
           if [ "$ok" != "1" ]; then
-            echo "ERROR: Release failed to report PID" >&2
+            echo "warn: release pid not reachable via bin script; checking launchctl"
+            launchctl_pid=$(launchctl print "$LAUNCH_AGENT_TARGET" 2>/dev/null | awk '/pid = /{print $3; exit}') || launchctl_pid=""
+            if [ -n "$launchctl_pid" ]; then
+              echo "launchctl reports pid $launchctl_pid"
+              ok=1
+            fi
+          fi
+
+          health_ok=0
+          for i in {1..30}; do
+            if curl -g --max-time 5 -sS -o /dev/null "http://[::1]:${PORT}/health" || curl --max-time 5 -sS -o /dev/null "http://127.0.0.1:${PORT}/health"; then
+              echo "Health check succeeded"
+              health_ok=1
+              break
+            fi
+            echo "health attempt ${i} failed"
+            sleep 1
+          done
+
+          if [ "$ok" != "1" ] || [ "$health_ok" != "1" ]; then
+            echo "ERROR: release failed verification" >&2
             echo "---- launchctl status ----"
             launchctl print "$LAUNCH_AGENT_TARGET" || true
             echo "---- recent stdout ----"
@@ -149,5 +169,3 @@ jobs:
             tail -n 200 "$APP_HOME/log/errjordan.err.log" || true
             exit 1
           fi
-
-          curl -g --max-time 5 -sS -o /dev/null "http://[::1]:${PORT}/health" || curl --max-time 5 -sS -o /dev/null "http://127.0.0.1:${PORT}/health" || true
