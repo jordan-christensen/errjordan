@@ -126,41 +126,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          # Wait up to 30s for launchd to report a PID
-          ok=0
-          for i in {1..30}; do
-            if output=$($BIN pid 2>&1); then
-              echo "Release is up (pid ok: ${output})"
-              ok=1
-              break
-            else
-              echo "pid attempt ${i} failed: ${output}"
-            fi
-            sleep 1
-          done
 
-          if [ "$ok" != "1" ]; then
-            echo "warn: release pid not reachable via bin script; checking launchctl"
-            launchctl_pid=$(launchctl print "$LAUNCH_AGENT_TARGET" 2>/dev/null | awk '/pid = /{print $3; exit}') || launchctl_pid=""
-            if [ -n "$launchctl_pid" ]; then
-              echo "launchctl reports pid $launchctl_pid"
-              ok=1
-            fi
-          fi
+          sleep 2
 
-          health_ok=0
-          for i in {1..30}; do
-            if curl -g --max-time 5 -sS -o /dev/null "http://[::1]:${PORT}/health" || curl --max-time 5 -sS -o /dev/null "http://127.0.0.1:${PORT}/health"; then
-              echo "Health check succeeded"
-              health_ok=1
-              break
-            fi
-            echo "health attempt ${i} failed"
-            sleep 1
-          done
-
-          if [ "$ok" != "1" ] || [ "$health_ok" != "1" ]; then
-            echo "ERROR: release failed verification" >&2
+          launchctl_pid=$(launchctl print "$LAUNCH_AGENT_TARGET" 2>/dev/null | awk '/pid = /{print $3; exit}') || launchctl_pid=""
+          if [ -z "$launchctl_pid" ]; then
+            echo "ERROR: launchctl reports no running pid" >&2
             echo "---- launchctl status ----"
             launchctl print "$LAUNCH_AGENT_TARGET" || true
             echo "---- recent stdout ----"
@@ -169,3 +140,23 @@ jobs:
             tail -n 200 "$APP_HOME/log/errjordan.err.log" || true
             exit 1
           fi
+
+          echo "launchctl reports pid $launchctl_pid"
+
+          for i in {1..30}; do
+            if curl -g --max-time 5 -sS -o /dev/null "http://[::1]:${PORT}/health" || curl --max-time 5 -sS -o /dev/null "http://127.0.0.1:${PORT}/health"; then
+              echo "Health check succeeded"
+              exit 0
+            fi
+            echo "health attempt ${i} failed"
+            sleep 1
+          done
+
+          echo "ERROR: release failed health check" >&2
+          echo "---- launchctl status ----"
+          launchctl print "$LAUNCH_AGENT_TARGET" || true
+          echo "---- recent stdout ----"
+          tail -n 200 "$APP_HOME/log/errjordan.out.log" || true
+          echo "---- recent stderr ----"
+          tail -n 200 "$APP_HOME/log/errjordan.err.log" || true
+          exit 1
