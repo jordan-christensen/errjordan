@@ -97,9 +97,10 @@ if [ -f "$ENV_FILE" ]; then set -a; . "$ENV_FILE"; set +a; fi
 exec "$BIN" start
 ```
 
-LaunchAgent at `~/Library/LaunchAgents/dev.errjordan.app.plist`:
+LaunchAgent at `~/Library/LaunchAgents/dev.errjordan.app.plist` (use `cat <<EOF` so `$HOME` expands when writing the file):
 
 ```
+cat <<EOF > ~/Library/LaunchAgents/dev.errjordan.app.plist
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -109,16 +110,19 @@ LaunchAgent at `~/Library/LaunchAgents/dev.errjordan.app.plist`:
     <array>
       <string>/bin/bash</string>
       <string>-lc</string>
-      <string>$HOME/apps/errjordan/bin/errjordan-launchd.sh</string>
+      <string>${HOME}/apps/errjordan/bin/errjordan-launchd.sh</string>
     </array>
-    <key>WorkingDirectory</key><string>$HOME/apps/errjordan</string>
+    <key>WorkingDirectory</key><string>${HOME}/apps/errjordan</string>
     <key>RunAtLoad</key><true/>
     <key>KeepAlive</key><true/>
-    <key>StandardOutPath</key><string>$HOME/apps/errjordan/log/errjordan.out.log</string>
-    <key>StandardErrorPath</key><string>$HOME/apps/errjordan/log/errjordan.err.log</string>
+    <key>StandardOutPath</key><string>${HOME}/apps/errjordan/log/errjordan.out.log</string>
+    <key>StandardErrorPath</key><string>${HOME}/apps/errjordan/log/errjordan.err.log</string>
   </dict>
   </plist>
+EOF
 ```
+
+<!-- Launchd does not perform environment substitution inside those paths; the `cat <<EOF` command above writes absolute paths. If you already created the plist with literal `$HOME`, run `sed -i '' "s|\$HOME|$HOME|g" ~/Library/LaunchAgents/dev.errjordan.app.plist` to fix it. -->
 
 Enable/restart:
 
