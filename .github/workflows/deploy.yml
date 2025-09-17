@@ -129,10 +129,12 @@ jobs:
           # Wait up to 30s for launchd to report a PID
           ok=0
           for i in {1..30}; do
-            if $BIN pid >/dev/null 2>&1; then
-              echo "Release is up (pid ok)"
+            if output=$($BIN pid 2>&1); then
+              echo "Release is up (pid ok: ${output})"
               ok=1
               break
+            else
+              echo "pid attempt ${i} failed: ${output}"
             fi
             sleep 1
           done
