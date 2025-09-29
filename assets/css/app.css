@@ -100,6 +100,53 @@
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 /* Make LiveView wrapper divs transparent for layout */
-[data-phx-session], [data-phx-teleported-src] { display: contents }
+[data-phx-session],
+[data-phx-teleported-src] {
+  display: contents;
+}
 
 /* This file is for your main application CSS */
+
+:root {
+  --grid-line: #e5e7eb;
+  --tone-muted: #a1a1aa;
+  --color-nominal: #64748b;
+  --color-confirmed: #16a34a;
+  --color-unexpected: #dc2626;
+  --color-missing: #a1a1aa;
+  --row-alt: #fafafa;
+  --text: #0f172a;
+  --brush-fill: rgba(59, 130, 246, 0.15);
+  --brush-stroke: #2563eb;
+  --font-row: 12px;
+  --font-axis: 12px;
+  --gutter: 140px;
+  --row-h-base: 28px;
+  --row-h-default: 28px;
+  --row-h-valve: 28px;
+  --row-h-gauge: 72px;
+  --row-label-stack: 0;
+  --row-scale: 1;
+  --gauge-stroke: #0ea5e9;
+  --gauge-fill-start: rgba(14, 165, 233, 0.25);
+  --gauge-fill-end: rgba(14, 165, 233, 0.04);
+
+  /* Test gradients: lighter (top) → darker (bottom) */
+  --grad-nominal-start:    #c7d2fe; /* light indigo */
+  --grad-nominal-end:      #6366f1; /* indigo-500 */
+
+  --grad-confirmed-start:  #bbf7d0; /* light green */
+  --grad-confirmed-end:    #16a34a; /* green-600 */
+
+  --grad-unexpected-start: #fecaca; /* light red */
+  --grad-unexpected-end:   #dc2626; /* red-600 */
+
+  --grad-missing-start:    #e5e7eb; /* light gray */
+  --grad-missing-end:      #9ca3af; /* gray-400 */
+}
+
+@media (max-width: 900px) {
+  :root {
+    --row-label-stack: 1;
+  }
+}

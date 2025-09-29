@@ -1,0 +1,24 @@
+<Layouts.app flash={@flash}>
+  <.header>
+    Timeline Lab
+    <:subtitle>Prototype canvas timeline rendered via LiveView + JS hook.</:subtitle>
+  </.header>
+
+  <div id="timeline-lab"
+       phx-hook="TimelineTable"
+       phx-update="ignore"
+       data-rows={Jason.encode!(@rows)}
+       data-extent={Jason.encode!(@extent)}
+       data-view={Jason.encode!(@view)}
+       data-sync-view={if(@sync_view?, do: "true", else: "false")}
+       class="w-full grid gap-3">
+
+    <div class="rounded-lg border border-base-300 bg-base-100 overflow-hidden">
+      <canvas id="timeline" class="block w-full" style="height: 320px"></canvas>
+    </div>
+
+    <div class="rounded-lg border border-base-300 bg-base-100 overflow-hidden">
+      <canvas id="minimap" class="block w-full" style="height: 64px"></canvas>
+    </div>
+  </div>
+</Layouts.app>

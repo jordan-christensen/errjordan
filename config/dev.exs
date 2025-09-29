@@ -52,6 +52,19 @@ config :errjordan, ErrjordanWeb.Endpoint,
 # configured to run both http and https servers on
 # different ports.
 
+config :esbuild, :errjordan,
+  args:
+      ~w(
+        js/app.js
+        --bundle
+        --format=esm
+        --target=es2020
+        --outdir=../priv/static/assets
+        --external:/fonts/*
+        --external:/images/*
+        --alias:@=.
+      )
+
 # Watch static and templates for browser reloading.
 config :errjordan, ErrjordanWeb.Endpoint,
   live_reload: [
