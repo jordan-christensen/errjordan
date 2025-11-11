@@ -5,7 +5,7 @@ defmodule ErrjordanWeb.LabLive do
   def mount(_params, _session, socket) do
     now = System.system_time(:millisecond)
     extent = %{start: now - days(30), end: now}
-    view   = %{start: extent.start, end: extent.end}
+    view = %{start: extent.start, end: extent.end}
 
     rows = demo_rows(extent)
 
@@ -35,9 +35,9 @@ defmodule ErrjordanWeb.LabLive do
       kind: "valve",
       label: %{serial: "SN-0001", name: "North Lawn"},
       spans: [
-        %{start: s + minutes(90),  end: s + minutes(180), kind: "nominal"},
+        %{start: s + minutes(90), end: s + minutes(180), kind: "nominal"},
         %{start: mid + minutes(60), end: mid + minutes(120), kind: "confirmed"},
-        %{start: e - minutes(240), end: e - minutes(200),  kind: "unexpected"}
+        %{start: e - minutes(240), end: e - minutes(200), kind: "unexpected"}
       ]
     }
 
@@ -46,7 +46,7 @@ defmodule ErrjordanWeb.LabLive do
       kind: "valve",
       label: %{serial: "SN-0002", name: "Front Beds"},
       spans: [
-        %{start: s + minutes(30),  end: s + minutes(60),  kind: "missing"},
+        %{start: s + minutes(30), end: s + minutes(60), kind: "missing"},
         %{start: s + minutes(300), end: s + minutes(360), kind: "nominal"},
         %{start: mid + minutes(10), end: mid + minutes(40), kind: "unexpected"}
       ]

@@ -4,7 +4,6 @@ defmodule ErrjordanWeb.Router do
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
-    plug :fetch_live_flash
     plug :put_root_layout, html: {ErrjordanWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
@@ -21,6 +20,8 @@ defmodule ErrjordanWeb.Router do
     live "/demo", DemoLive
     live "/perf", PerfLive
     live "/lab", LabLive, :index
+    live "/bento", BentoLive
+    live "/bento/:view_slug", BentoLive
   end
 
   scope "/", ErrjordanWeb do

@@ -6,6 +6,14 @@
 @source "../js";
 @source "../../lib/errjordan_web";
 
+@theme {
+  --color-base-100: oklch(100% 0.009 265);
+  --color-base-200: oklch(98.5% 0.007 255);
+  --color-base-300: oklch(97% 0.011 254.2);
+  --color-base-400: oklch(96.5% 0.011 254.2);
+  --color-base-500: oklch(95% 0.011 254.2);
+}
+
 /* A Tailwind plugin that makes "hero-#{ICON}" classes available.
    The heroicons installation itself is managed by your mix.exs */
 @plugin "../vendor/heroicons";
@@ -22,71 +30,36 @@
   We ship with two themes, a light one inspired on Phoenix colors and a dark one inspired
   on Elixir colors. Build your own at: https://daisyui.com/theme-generator/ */
 @plugin "../vendor/daisyui-theme" {
-  name: "dark";
-  default: false;
-  prefersdark: true;
-  color-scheme: "dark";
-  --color-base-100: oklch(30.33% 0.016 252.42);
-  --color-base-200: oklch(25.26% 0.014 253.1);
-  --color-base-300: oklch(20.15% 0.012 254.09);
-  --color-base-content: oklch(97.807% 0.029 256.847);
-  --color-primary: oklch(58% 0.233 277.117);
-  --color-primary-content: oklch(96% 0.018 272.314);
-  --color-secondary: oklch(58% 0.233 277.117);
-  --color-secondary-content: oklch(96% 0.018 272.314);
-  --color-accent: oklch(60% 0.25 292.717);
-  --color-accent-content: oklch(96% 0.016 293.756);
-  --color-neutral: oklch(37% 0.044 257.287);
-  --color-neutral-content: oklch(98% 0.003 247.858);
-  --color-info: oklch(58% 0.158 241.966);
-  --color-info-content: oklch(97% 0.013 236.62);
-  --color-success: oklch(60% 0.118 184.704);
-  --color-success-content: oklch(98% 0.014 180.72);
-  --color-warning: oklch(66% 0.179 58.318);
-  --color-warning-content: oklch(98% 0.022 95.277);
-  --color-error: oklch(58% 0.253 17.585);
-  --color-error-content: oklch(96% 0.015 12.422);
-  --radius-selector: 0.25rem;
-  --radius-field: 0.25rem;
-  --radius-box: 0.5rem;
-  --size-selector: 0.21875rem;
-  --size-field: 0.21875rem;
-  --border: 1.5px;
-  --depth: 1;
-  --noise: 0;
-}
-
-@plugin "../vendor/daisyui-theme" {
   name: "light";
   default: true;
   prefersdark: false;
   color-scheme: "light";
-  --color-base-100: oklch(98% 0 0);
-  --color-base-200: oklch(96% 0.001 286.375);
-  --color-base-300: oklch(92% 0.004 286.32);
-  --color-base-content: oklch(21% 0.006 285.885);
-  --color-primary: oklch(70% 0.213 47.604);
-  --color-primary-content: oklch(98% 0.016 73.684);
-  --color-secondary: oklch(55% 0.027 264.364);
-  --color-secondary-content: oklch(98% 0.002 247.839);
-  --color-accent: oklch(0% 0 0);
-  --color-accent-content: oklch(100% 0 0);
-  --color-neutral: oklch(44% 0.017 285.786);
-  --color-neutral-content: oklch(98% 0 0);
-  --color-info: oklch(62% 0.214 259.815);
-  --color-info-content: oklch(97% 0.014 254.604);
-  --color-success: oklch(70% 0.14 182.503);
-  --color-success-content: oklch(98% 0.014 180.72);
-  --color-warning: oklch(66% 0.179 58.318);
-  --color-warning-content: oklch(98% 0.022 95.277);
-  --color-error: oklch(58% 0.253 17.585);
-  --color-error-content: oklch(96% 0.015 12.422);
-  --radius-selector: 0.25rem;
+  --color-base-100: oklch(0.993 0.009 265);
+  --color-base-200: oklch(0.963 0.007 255);
+  --color-base-300: oklch(0.92 0.011 254.2);
+  --color-base-content: oklch(0.22 0.03 255);
+  --color-primary: oklch(0.621 0.197 244.5);
+  --color-primary-content: oklch(0.98 0.02 250);
+  --color-secondary: oklch(0.804 0.155 210.6);
+  --color-secondary-content: oklch(0.16 0.03 240);
+  --color-accent: oklch(0.832 0.232 129.2);
+  --color-accent-content: oklch(0.111 0.1 252.5);
+  --color-neutral: oklch(0.414 0.102 243.6);
+  --color-neutral-content: oklch(0.988 0.033 255);
+  --color-info: oklch(0.827 0.13 230);
+  --color-info-content: oklch(0.133 0.087 240);
+  --color-success: oklch(0.779 0.225 146.1);
+  --color-success-content: oklch(0.12 0.149 150);
+  --color-warning: oklch(0.867 0.195 75);
+  --color-warning-content: oklch(0.109 0.11 80);
+  --color-error: oklch(0.67 0.229 29.2);
+  --color-error-content: oklch(0.969 0.027 26);
+  --radius-selector: 2rem;
   --radius-field: 0.25rem;
   --radius-box: 0.5rem;
-  --size-selector: 0.21875rem;
-  --size-field: 0.21875rem;
-  --border: 1.5px;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
   --depth: 1;
   --noise: 0;
 }
@@ -132,17 +105,17 @@
   --gauge-fill-end: rgba(14, 165, 233, 0.04);
 
   /* Test gradients: lighter (top) → darker (bottom) */
-  --grad-nominal-start:    #c7d2fe; /* light indigo */
-  --grad-nominal-end:      #6366f1; /* indigo-500 */
+  --grad-nominal-start: #c7d2fe; /* light indigo */
+  --grad-nominal-end: #6366f1; /* indigo-500 */
 
-  --grad-confirmed-start:  #bbf7d0; /* light green */
-  --grad-confirmed-end:    #16a34a; /* green-600 */
+  --grad-confirmed-start: #bbf7d0; /* light green */
+  --grad-confirmed-end: #16a34a; /* green-600 */
 
   --grad-unexpected-start: #fecaca; /* light red */
-  --grad-unexpected-end:   #dc2626; /* red-600 */
+  --grad-unexpected-end: #dc2626; /* red-600 */
 
-  --grad-missing-start:    #e5e7eb; /* light gray */
-  --grad-missing-end:      #9ca3af; /* gray-400 */
+  --grad-missing-start: #e5e7eb; /* light gray */
+  --grad-missing-end: #9ca3af; /* gray-400 */
 }
 
 @media (max-width: 900px) {
@@ -150,3 +123,26 @@
     --row-label-stack: 1;
   }
 }
+
+::-moz-selection {
+  color: revert;
+  background-color: revert;
+}
+
+:root {
+  font-size: 16px;
+}
+
+body {
+  font-family: "Manrope", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+}
+
+.plex {
+  font-family: "IBM Plex Mono", monospace;
+  font-feature-settings: "ss02", "zero";
+  font-variation-settings: var(--default-font-variation-settings, normal);
+  -webkit-font-smoothing: antialiased;
+}
+
+

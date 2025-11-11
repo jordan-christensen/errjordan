@@ -25,7 +25,7 @@ defmodule ErrjordanWeb.PerfLive do
 
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash}>
+    <Layouts.app>
       <div class="space-y-6">
         <h1 class="text-2xl font-semibold">Performance Lab</h1>
 
@@ -97,7 +97,7 @@ defmodule ErrjordanWeb.PerfLive do
         </div>
 
         <div>
-          <h2 class="text-lg font-medium mb-2">Recent results</h2>
+          <h2 class="mb-2 text-lg font-medium">Recent results</h2>
           <div id="events" phx-update="stream" class="space-y-1">
             <div :for={{id, ev} <- @streams.events} id={id} class="rounded border p-2 text-sm">
               <span class="opacity-70">#{ev.seq}</span>

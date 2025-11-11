@@ -35,8 +35,7 @@ config :errjordan, Errjordan.Mailer, adapter: Swoosh.Adapters.Local
 config :esbuild,
   version: "0.25.4",
   errjordan: [
-    args:
-      ~w(
+    args: ~w(
         js/app.js
         --bundle
         --format=esm

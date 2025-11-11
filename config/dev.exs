@@ -52,9 +52,7 @@ config :errjordan, ErrjordanWeb.Endpoint,
 # configured to run both http and https servers on
 # different ports.
 
-config :esbuild, :errjordan,
-  args:
-      ~w(
+config :esbuild, :errjordan, args: ~w(
         js/app.js
         --bundle
         --format=esm
